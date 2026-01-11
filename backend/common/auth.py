@@ -188,3 +188,6 @@ require_auth = Depends(get_current_user)
 require_viewer = Depends(require_role(Role.VIEWER))
 require_operator = Depends(require_role(Role.OPERATOR))
 require_admin = Depends(require_role(Role.ADMIN))
+
+# Backward compatibility alias
+get_current_active_user = get_current_user
