@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from .config import get_settings
-from .models.user import User as UserORM
+from .models.user import UserORM
 
 # --- Configuration ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
