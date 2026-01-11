@@ -105,7 +105,7 @@ services:
   frontend:
     image: ghcr.io/tamtunnel/constellation-hub/frontend:${IMAGE_TAG:-latest}
     ports:
-      - "3000:80"
+      - "80:80"  # Use 80:80 for Coolify (Traefik uses left side for routing)
     labels:
       # Tell Traefik to connect to port 80 inside the container (nginx)
       # This is only used by Coolify/Traefik and ignored in plain docker compose
