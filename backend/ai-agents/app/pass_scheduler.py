@@ -370,3 +370,22 @@ class PassScheduler:
         constraints: Dict[str, Any] = None
     ) -> OptimizationResult:
         return self._strategy.optimize(passes, data_queues, stations, constraints)
+
+
+# Singleton scheduler instance
+_scheduler_instance: Optional[PassScheduler] = None
+
+
+def get_scheduler() -> PassScheduler:
+    """
+    Get the singleton scheduler instance.
+    
+    Strategy is configured via SCHEDULER_STRATEGY environment variable.
+    Defaults to 'heuristic'.
+    """
+    global _scheduler_instance
+    if _scheduler_instance is None:
+        import os
+        strategy = os.environ.get('SCHEDULER_STRATEGY', 'heuristic')
+        _scheduler_instance = PassScheduler(strategy=strategy)
+    return _scheduler_instance
