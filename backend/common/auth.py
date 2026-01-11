@@ -51,6 +51,9 @@ def get_password_hash(password: str) -> str:
     """Generate a hash for a plain-text password."""
     return pwd_context.hash(password)
 
+# Alias for backward compatibility
+hash_password = get_password_hash
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[UserORM]:
     """
     Find a user by email and verify their password.

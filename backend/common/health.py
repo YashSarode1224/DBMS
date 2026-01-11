@@ -5,14 +5,11 @@ Provides liveness (/healthz) and readiness (/readyz) probes
 for Kubernetes and load balancer health checks.
 """
 from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-
-from .config import get_settings
 
 
 router = APIRouter(tags=["Health"])
@@ -35,40 +32,21 @@ async def liveness():
 
 
 @router.get("/readyz")
-async def readiness(db: Optional[AsyncSession] = None):
+async def readiness():
     """
     Readiness probe - indicates the service is ready to accept traffic.
     
-    Checks that the database connection is working.
-    Returns 200 if ready, 503 if not.
+    For services that need database checks, use create_health_router_with_db().
+    This standalone endpoint returns basic readiness status.
     
     This endpoint does NOT require authentication.
     """
-    settings = get_settings()
-    checks = {
-        "database": "unknown"
-    }
-    all_ready = True
-    
-    # Check database (if session provided)
-    if db is not None:
-        try:
-            await db.execute(text("SELECT 1"))
-            checks["database"] = "connected"
-        except Exception as e:
-            checks["database"] = f"error: {str(e)}"
-            all_ready = False
-    else:
-        checks["database"] = "not_configured"
-    
-    status_code = 200 if all_ready else 503
-    
     return JSONResponse(
-        status_code=status_code,
+        status_code=200,
         content={
-            "status": "ready" if all_ready else "not_ready",
+            "status": "ready",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "checks": checks
+            "checks": {"service": "ok"}
         }
     )
 
