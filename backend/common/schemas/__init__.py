@@ -79,3 +79,7 @@ class APIKeyResponse(BaseModel):
     """Schema for API key generation response."""
     api_key: str
     message: str = "API key generated. Store it securely - it cannot be retrieved again."
+
+
+# Backward compatibility alias
+User = UserResponse
