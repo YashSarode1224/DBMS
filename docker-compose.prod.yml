@@ -1,7 +1,5 @@
-# Docker Compose for Coolify/Production Deployment - MINIMAL TRAEFIK FIX
-# ONLY frontend gets network fix - preserves Coolify auto-routing for all services
+# COMPLETE Docker Compose - All services + Frontend Traefik fix
 services:
-  # PostgreSQL Database (unchanged)
   postgres:
     image: postgres:15-alpine
     environment:
@@ -20,7 +18,6 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # Redis Cache (unchanged)  
   redis:
     image: redis:7-alpine
     ports:
@@ -32,7 +29,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Core Orbits Service (unchanged)
   core-orbits:
     image: ghcr.io/tamtunnel/constellation-hub/core-orbits:${IMAGE_TAG:-latest}
     ports:
@@ -49,7 +45,6 @@ services:
       - redis
     restart: unless-stopped
 
-  # Routing Service (unchanged)
   routing:
     image: ghcr.io/tamtunnel/constellation-hub/routing:${IMAGE_TAG:-latest}
     ports:
@@ -63,7 +58,6 @@ services:
       - redis
     restart: unless-stopped
 
-  # Ground Scheduler Service (unchanged)
   ground-scheduler:
     image: ghcr.io/tamtunnel/constellation-hub/ground-scheduler:${IMAGE_TAG:-latest}
     ports:
@@ -79,6 +73,44 @@ services:
       - core-orbits
     restart: unless-stopped
 
-  # AI Agents Service (unchanged)
   ai-agents:
-    image: ghcr.io/tamtunnel/constellation
+    image: ghcr.io/tamtunnel/constellation-hub/ai-agents:${IMAGE_TAG:-latest}
+    ports:
+      - "8004:8004"
+    environment:
+      GROUND_SCHEDULER_URL: http://ground-scheduler:8003
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      SCHEDULER_STRATEGY: ${SCHEDULER_STRATEGY:-heuristic}
+      DEBUG: ${DEBUG:-false}
+    depends_on:
+      - ground-scheduler
+    restart: unless-stopped
+
+  # FRONTEND - FIXED
+  frontend:
+    image: ghcr.io/tamtunnel/constellation-hub/frontend:${IMAGE_TAG:-latest}
+    ports:
+      - "3000:80"
+    labels:
+      traefik.docker.network: coolify
+    depends_on:
+      - core-orbits
+      - routing
+      - ground-scheduler
+      - ai-agents
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true
+    name: coolify
+
+volumes:
+  postgres_data:
