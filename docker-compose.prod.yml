@@ -105,17 +105,20 @@ services:
   frontend:
     image: ghcr.io/tamtunnel/constellation-hub/frontend:${IMAGE_TAG:-latest}
     ports:
-      - "80:80"  # Use 80:80 for Coolify (Traefik uses left side for routing)
+      - "3000:3000"  # Use 3000:3000 for Coolify (Traefik uses left side for routing)
     labels:
-      # Tell Traefik to connect to port 80 inside the container (nginx)
+      # Tell Traefik to connect to port 3000 inside the container (nginx)
       # This is only used by Coolify/Traefik and ignored in plain docker compose
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
     depends_on:
       - core-orbits
       - routing
       - ground-scheduler
       - ai-agents
     restart: unless-stopped
-
+    healthcheck:  # Coolify loves these
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 volumes:
   postgres_data:
