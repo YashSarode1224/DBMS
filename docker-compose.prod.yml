@@ -1,6 +1,7 @@
-# Docker Compose for Coolify/Production Deployment - Traefik Fixed
+# Docker Compose for Coolify/Production Deployment - MINIMAL TRAEFIK FIX
+# ONLY frontend gets network fix - preserves Coolify auto-routing for all services
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database (unchanged)
   postgres:
     image: postgres:15-alpine
     environment:
@@ -18,10 +19,8 @@ services:
       retries: 10
       start_period: 10s
     restart: unless-stopped
-    networks:
-      - coolify
 
-  # Redis Cache
+  # Redis Cache (unchanged)  
   redis:
     image: redis:7-alpine
     ports:
@@ -32,10 +31,8 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
-    networks:
-      - coolify
 
-  # Core Orbits Service
+  # Core Orbits Service (unchanged)
   core-orbits:
     image: ghcr.io/tamtunnel/constellation-hub/core-orbits:${IMAGE_TAG:-latest}
     ports:
@@ -51,12 +48,8 @@ services:
       - postgres
       - redis
     restart: unless-stopped
-    networks:
-      - coolify
-    labels:
-      traefik.docker.network: coolify
 
-  # Routing Service
+  # Routing Service (unchanged)
   routing:
     image: ghcr.io/tamtunnel/constellation-hub/routing:${IMAGE_TAG:-latest}
     ports:
@@ -69,16 +62,23 @@ services:
       - postgres
       - redis
     restart: unless-stopped
-    networks:
-      - coolify
-    labels:
-      traefik.docker.network: coolify
 
-  # Ground Scheduler Service
+  # Ground Scheduler Service (unchanged)
   ground-scheduler:
     image: ghcr.io/tamtunnel/constellation-hub/ground-scheduler:${IMAGE_TAG:-latest}
     ports:
       - "8003:8003"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-constellation}:${POSTGRES_PASSWORD:-constellation}@postgres:5432/${POSTGRES_DB:-constellation_hub}
-      REDIS
+      REDIS_URL: redis://redis:6379
+      CORE_ORBITS_URL: http://core-orbits:8001
+      DEBUG: ${DEBUG:-false}
+    depends_on:
+      - postgres
+      - redis
+      - core-orbits
+    restart: unless-stopped
+
+  # AI Agents Service (unchanged)
+  ai-agents:
+    image: ghcr.io/tamtunnel/constellation
