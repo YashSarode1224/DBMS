@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: 'class',
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,43 +8,34 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Space-themed color palette
-                'space': {
-                    900: '#0a0a1a',
-                    800: '#12122a',
-                    700: '#1a1a3a',
-                    600: '#22224a',
-                    500: '#2a2a5a',
+                // Dark Space & Golden Amber Palette from HTML Reference
+                cosmos: {
+                    bg: '#02050b',
+                    panel: 'rgba(10, 20, 36, 0.78)',
+                    panelSolid: '#0a1424',
+                    panelDark: '#060d18',
+                    line: 'rgba(127, 178, 212, 0.24)',
+                    ink: '#e8f1f8',
+                    mute: '#8fa6ba',
+                    steel: '#7fb2d4',
+                    amber: '#f2c14e',
+                    cyan: '#6fd6e8',
                 },
-                'cosmic': {
-                    400: '#818cf8',
-                    500: '#6366f1',
-                    600: '#4f46e5',
-                },
-                'nebula': {
-                    400: '#c084fc',
-                    500: '#a855f7',
-                    600: '#9333ea',
-                },
-                'aurora': {
-                    400: '#34d399',
-                    500: '#10b981',
-                    600: '#059669',
+                brand: {
+                    primary: '#f2c14e',
+                    secondary: '#7fb2d4',
+                    slateDark: '#0a1424',
+                    slateLight: '#e8f1f8',
                 },
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
-                mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+                sans: ['"Bricolage Grotesque"', 'Inter', '-apple-system', 'sans-serif'],
+                mono: ['"IBM Plex Mono"', 'JetBrains Mono', 'ui-monospace', 'monospace'],
             },
-            animation: {
-                'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                'glow': 'glow 2s ease-in-out infinite alternate',
-            },
-            keyframes: {
-                glow: {
-                    '0%': { boxShadow: '0 0 5px 0 rgba(99, 102, 241, 0.5)' },
-                    '100%': { boxShadow: '0 0 20px 5px rgba(99, 102, 241, 0.8)' },
-                },
+            boxShadow: {
+                'cosmic': '0 4px 24px -2px rgba(2, 5, 11, 0.8)',
+                'amber-glow': '0 0 15px rgba(242, 193, 78, 0.35)',
+                'cyan-glow': '0 0 15px rgba(111, 214, 232, 0.35)',
             },
         },
     },

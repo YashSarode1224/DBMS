@@ -54,11 +54,12 @@ def get_database_url():
     """Get database URL from environment, with async driver."""
     url = os.environ.get(
         "DATABASE_URL",
-        "postgresql://constellation:constellation@localhost:5432/constellation_hub"
+        "mysql+aiomysql://constellation:constellation@127.0.0.1:3306/constellation_hub"
     )
-    # Ensure we use asyncpg driver
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("mysql://"):
+        url = url.replace("mysql://", "mysql+aiomysql://", 1)
     return url
 
 

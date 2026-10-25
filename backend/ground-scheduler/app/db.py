@@ -11,9 +11,11 @@ class Base(DeclarativeBase):
 
 
 def get_database_url() -> str:
-    url = os.getenv("DATABASE_URL", "postgresql://constellation:constellation@localhost:5432/constellation_hub")
+    url = os.getenv("DATABASE_URL", "mysql+aiomysql://constellation:constellation@127.0.0.1:3306/constellation_hub")
     if url.startswith("postgresql://"):
         return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("mysql://"):
+        return url.replace("mysql://", "mysql+aiomysql://", 1)
     return url
 
 

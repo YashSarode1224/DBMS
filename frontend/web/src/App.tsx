@@ -7,20 +7,23 @@ import Scheduling from "./pages/Scheduling";
 import OpsCoPilot from "./pages/OpsCoPilot";
 import TLEAdmin from "./pages/TLEAdmin";
 import Login from "./pages/Login";
+import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/satellites" element={<Satellites />} />
-        <Route path="/ground-stations" element={<GroundStations />} />
-        <Route path="/scheduling" element={<Scheduling />} />
-        <Route path="/ops-copilot" element={<OpsCoPilot />} />
-        <Route path="/tle-admin" element={<TLEAdmin />} />
-      </Routes>
-    </Layout>
+    <ThemeProvider>
+      <Layout>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/satellites" element={<Satellites />} />
+          <Route path="/ground-stations" element={<GroundStations />} />
+          <Route path="/scheduling" element={<Scheduling />} />
+          <Route path="/ops-copilot" element={<OpsCoPilot />} />
+          <Route path="/tle-admin" element={<TLEAdmin />} />
+        </Routes>
+      </Layout>
+    </ThemeProvider>
   );
 }
 

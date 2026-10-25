@@ -2,11 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
+/* Space Tech Palette from Interactive Globe HTML Reference */
 :root {
-    --color-space-900: #0a0a1a;
-    --color-cosmic-500: #6366f1;
-    --color-aurora-500: #10b981;
+    --bg: #02050b;
+    --panel: rgba(10, 20, 36, 0.78);
+    --panel-solid: #0a1424;
+    --panel-dark: #060d18;
+    --line: rgba(127, 178, 212, 0.24);
+    --ink: #e8f1f8;
+    --mute: #8fa6ba;
+    --steel: #7fb2d4;
+    --amber: #f2c14e;
+    --cyan: #6fd6e8;
+    color-scheme: dark;
 }
 
 * {
@@ -16,117 +24,346 @@
 }
 
 body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background-color: var(--color-space-900);
-    color: white;
+    font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
-/* CesiumJS container styles */
-.cesium-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
+.mono {
+    font-family: "IBM Plex Mono", JetBrains Mono, ui-monospace, monospace;
 }
 
-.cesium-widget-credits {
-    display: none !important;
+/* Glassmorphic Panel & HUD Cards */
+.hud-card, .card {
+    background-color: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 4px 24px -2px rgba(2, 5, 11, 0.6);
+    transition: all 0.2s ease-in-out;
 }
 
-/* Custom scrollbar */
+.hud-card:hover, .card:hover {
+    border-color: rgba(127, 178, 212, 0.45);
+}
+
+/* Primary Button (Golden Amber) */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #f2c14e;
+    color: #02050b;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #f2c14e;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+    background-color: #ffd27a;
+    border-color: #ffd27a;
+    box-shadow: 0 0 14px rgba(242, 193, 78, 0.45);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Secondary Button (Glassmorphic Line) */
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: rgba(10, 20, 36, 0.72);
+    backdrop-filter: blur(10px);
+    color: #e8f1f8;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid rgba(127, 178, 212, 0.24);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(127, 178, 212, 0.18);
+    border-color: #7fb2d4;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+/* HUD Micro Button */
+.btn-hud {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background-color: rgba(127, 178, 212, 0.12);
+    color: #e8f1f8;
+    font-size: 0.75rem;
+    font-family: "IBM Plex Mono", monospace;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(127, 178, 212, 0.24);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-hud:hover {
+    background-color: rgba(127, 178, 212, 0.25);
+    border-color: #7fb2d4;
+}
+
+/* Reference Chip */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(127, 178, 212, 0.24);
+    background: rgba(10, 20, 36, 0.72);
+    backdrop-filter: blur(10px);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #e8f1f8;
+}
+
+.chip.live {
+    color: #f2c14e;
+    border-color: rgba(242, 193, 78, 0.5);
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+    animation: p 2s infinite;
+}
+
+@keyframes p {
+    50% { opacity: 0.3; }
+}
+
+/* Input Fields */
+.input {
+    background-color: rgba(10, 20, 36, 0.75);
+    border: 1px solid rgba(127, 178, 212, 0.24);
+    border-radius: 10px;
+    padding: 0.5rem 0.875rem;
+    color: #e8f1f8;
+    font-size: 0.8125rem;
+    transition: all 0.15s ease;
+    outline: none;
+}
+
+.input:focus {
+    border-color: #7fb2d4;
+    box-shadow: 0 0 0 2px rgba(127, 178, 212, 0.25);
+}
+
+/* Table Rows */
+.table-row {
+    border-bottom: 1px solid rgba(127, 178, 212, 0.15);
+    transition: background-color 0.15s ease;
+}
+
+.table-row:hover {
+    background-color: rgba(127, 178, 212, 0.12);
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.5);
-    border-radius: 4px;
+    background: rgba(127, 178, 212, 0.25);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.8);
+    background: rgba(127, 178, 212, 0.5);
 }
 
-/* Glassmorphism utilities */
-.glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+/* Globe landing page HUD classes from reference */
+.tg {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--mute);
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-.glass-dark {
-    background: rgba(10, 10, 26, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+.tg:hover {
+    color: var(--ink);
+    background: rgba(127, 178, 212, 0.14);
 }
 
-/* Glow effects */
-.glow-cosmic {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+.tg[aria-pressed=true] {
+    color: var(--ink);
+    border-color: var(--steel);
+    background: rgba(127, 178, 212, 0.18);
 }
 
-.glow-aurora {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
 }
 
-/* Button styles */
-.btn-primary {
-    @apply bg-cosmic-500 hover:bg-cosmic-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200;
+.tabs button {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: 0;
+    color: var(--mute);
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-.btn-secondary {
-    @apply bg-space-600 hover:bg-space-500 text-white font-medium py-2 px-4 rounded-lg border border-white/10 transition-all duration-200;
+.tabs button[aria-selected=true] {
+    color: var(--ink);
+    border-color: var(--amber);
 }
 
-/* Card styles */
-.card {
-    @apply bg-space-800 rounded-xl border border-white/10 p-4;
+.it {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    background: none;
+    border-radius: 9px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
 }
 
-.card-glass {
-    @apply glass rounded-xl p-4;
+.it:hover, .it.on {
+    background: rgba(127, 178, 212, 0.16);
 }
 
-/* Status indicators */
-.status-healthy {
-    @apply bg-aurora-500 animate-pulse-slow;
+.it i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
 }
 
-.status-warning {
-    @apply bg-yellow-500 animate-pulse;
+.it span {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--mute);
 }
 
-.status-critical {
-    @apply bg-red-500 animate-pulse;
+.kv {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
 }
 
-/* Table styles */
-.table-row {
-    @apply border-b border-white/5 hover:bg-white/5 transition-colors;
+.kv div {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: rgba(10, 20, 36, 0.5);
 }
 
-/* Input styles */
-.input {
-    @apply bg-space-700 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cosmic-500 focus:border-transparent;
+.kv small {
+    display: block;
+    color: var(--mute);
+    font-size: 11px;
 }
 
-/* Animations */
-@keyframes satellite-orbit {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+.kv b {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink);
 }
 
-.animate-orbit {
-    animation: satellite-orbit 20s linear infinite;
+.ct {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.ct:hover {
+    background-color: rgba(127, 178, 212, 0.1);
+}
+
+.ct em {
+    font-style: normal;
+    color: var(--amber);
+}
+
+.ct span {
+    color: var(--mute);
+}
+
+.x {
+    float: right;
+    border: 1px solid var(--line);
+    background: none;
+    border-radius: 8px;
+    padding: 2px 9px;
+    color: var(--mute);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.x:hover {
+    color: var(--ink);
+    border-color: var(--steel);
+}
+
+.lab {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    font-size: 11px;
+    pointer-events: none;
+    white-space: nowrap;
+    text-shadow: 0 0 6px #000;
+}
+
+.tip {
+    position: fixed;
+    z-index: 6;
+    pointer-events: none;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    display: none;
 }

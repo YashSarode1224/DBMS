@@ -13,8 +13,17 @@ import os
 import sys
 import argparse
 
+# Ensure UTF-8 output on Windows consoles
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Ensure backend directory is in path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
 
 from alembic.config import Config
 from alembic import command
@@ -22,8 +31,12 @@ from alembic import command
 
 def get_alembic_config():
     """Get Alembic configuration."""
-    config_path = os.path.join(os.path.dirname(__file__), 'alembic.ini')
-    return Config(config_path)
+    config_path = os.path.join(backend_dir, 'alembic.ini')
+    if not os.path.exists(config_path):
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'alembic.ini')
+    cfg = Config(config_path)
+    cfg.set_main_option("script_location", os.path.join(backend_dir, "migrations"))
+    return cfg
 
 
 def upgrade(revision='head'):
