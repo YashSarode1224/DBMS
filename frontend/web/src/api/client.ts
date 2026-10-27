@@ -52,6 +52,13 @@ export const api = {
   // Auth & Demo
   login: (data: FormData) => coreOrbitsApi.post("/login", data),
   seedDemo: () => coreOrbitsApi.post("/demo/seed"),
+
+  // MySQL 8.0 DBMS Inspection
+  getDbOverview: () => coreOrbitsApi.get("/db/overview"),
+  getDbTable: (table: string, limit: number = 50) =>
+    coreOrbitsApi.get(`/db/table/${table}?limit=${limit}`),
+  executeDbQuery: (query: string) =>
+    coreOrbitsApi.post("/db/execute", { query }),
 };
 
 export { coreOrbitsApi, routingApi, schedulerApi, aiAgentsApi };

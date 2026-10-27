@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 
 from .db import get_db
 from .models import ConstellationORM, SatelliteORM
@@ -358,3 +358,134 @@ def _satellite_to_response(satellite: SatelliteORM) -> SatelliteResponse:
         created_at=satellite.created_at,
         updated_at=satellite.updated_at
     )
+
+
+# ============ Database Inspection Endpoints for DBMS Verification ============
+
+@router.get("/db/overview")
+async def get_db_overview(db: AsyncSession = Depends(get_db)):
+    """Return overview of all MySQL tables and metadata for DBMS verification."""
+    tables_res = await db.execute(text("SHOW TABLES;"))
+    table_names = [row[0] for row in tables_res.fetchall()]
+    
+    tables_info = []
+    total_rows = 0
+    for t in table_names:
+        try:
+            count_res = await db.execute(text(f"SELECT COUNT(*) FROM `{t}`;"))
+            cnt = count_res.scalar() or 0
+            total_rows += cnt
+            
+            cols_res = await db.execute(text(f"DESCRIBE `{t}`;"))
+            cols = [
+                {"field": r[0], "type": str(r[1]), "null": r[2], "key": r[3], "default": str(r[4])}
+                for r in cols_res.fetchall()
+            ]
+            
+            tables_info.append({
+                "name": t,
+                "rows": cnt,
+                "columns": cols
+            })
+        except Exception as e:
+            tables_info.append({
+                "name": t,
+                "rows": 0,
+                "columns": [],
+                "error": str(e)
+            })
+            
+    return {
+        "status": "connected",
+        "database": "constellation_hub",
+        "engine": "MySQL 8.0 (InnoDB / utf8mb4)",
+        "total_tables": len(tables_info),
+        "total_rows": total_rows,
+        "tables": tables_info
+    }
+
+
+@router.get("/db/table/{table_name}")
+async def get_db_table_data(
+    table_name: str,
+    limit: int = Query(50, ge=1, le=500),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve records from a specific MySQL table."""
+    tables_res = await db.execute(text("SHOW TABLES;"))
+    allowed_tables = [row[0] for row in tables_res.fetchall()]
+    if table_name not in allowed_tables:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' does not exist.")
+    
+    res = await db.execute(text(f"SELECT * FROM `{table_name}` LIMIT :limit;"), {"limit": limit})
+    columns = list(res.keys())
+    raw_rows = res.fetchall()
+    
+    rows = []
+    for r in raw_rows:
+        row_dict = {}
+        for col, val in zip(columns, r):
+            if isinstance(val, (datetime,)):
+                row_dict[col] = val.isoformat()
+            else:
+                row_dict[col] = val
+        rows.append(row_dict)
+        
+    return {
+        "table": table_name,
+        "count": len(rows),
+        "columns": columns,
+        "rows": rows
+    }
+
+
+@router.post("/db/execute")
+async def execute_db_query(
+    payload: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    """Execute a read-only SQL query against MySQL for DBMS inspection."""
+    import time
+    query_str = (payload.get("query") or "").strip()
+    if not query_str:
+        raise HTTPException(status_code=400, detail="Query cannot be empty.")
+    
+    first_word = query_str.split()[0].upper() if query_str else ""
+    if first_word not in ("SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN"):
+        raise HTTPException(
+            status_code=403, 
+            detail="Execution restricted to read-only queries (SELECT, SHOW, DESCRIBE, EXPLAIN)."
+        )
+    
+    start = time.time()
+    try:
+        res = await db.execute(text(query_str))
+        duration_ms = round((time.time() - start) * 1000, 2)
+        columns = list(res.keys())
+        raw_rows = res.fetchall()
+        rows = []
+        for r in raw_rows:
+            row_dict = {}
+            for col, val in zip(columns, r):
+                if isinstance(val, (datetime,)):
+                    row_dict[col] = val.isoformat()
+                else:
+                    row_dict[col] = val
+            rows.append(row_dict)
+            
+        return {
+            "status": "success",
+            "query": query_str,
+            "duration_ms": duration_ms,
+            "columns": columns,
+            "row_count": len(rows),
+            "rows": rows
+        }
+    except Exception as e:
+        duration_ms = round((time.time() - start) * 1000, 2)
+        return {
+            "status": "error",
+            "query": query_str,
+            "duration_ms": duration_ms,
+            "error": str(e)
+        }

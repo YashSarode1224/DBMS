@@ -89,10 +89,14 @@ export default function Layout({ children }: LayoutProps) {
               <i className="dot" />
               <span>10 satellites synced</span>
             </span>
-            <span className="chip mono text-xs py-1 px-3 text-[#7fb2d4]">
+            <Link
+              to="/ops-copilot"
+              className="chip mono text-xs py-1 px-3 text-[#7fb2d4] hover:border-[#7fb2d4] transition-all cursor-pointer flex items-center gap-1.5"
+              title="Open Ops Co-Pilot & MySQL 8.0 Studio"
+            >
               <HardDrive className="w-3.5 h-3.5" />
               <span>MySQL 8.0 Live</span>
-            </span>
+            </Link>
             <span className="chip mono text-xs py-1 px-3 text-[#8fa6ba] hidden lg:inline-flex">
               <Cpu className="w-3.5 h-3.5 text-[#7fb2d4]" />
               <span>Port 3306</span>
