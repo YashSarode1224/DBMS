@@ -9,7 +9,10 @@ import {
   Bot,
   Database,
   Maximize,
-  Minimize
+  Minimize,
+  Sparkles,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface SatData {
@@ -171,6 +174,11 @@ export default function Dashboard() {
 
   // Chrome / HTML5 Fullscreen Support
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [resolutionMode, setResolutionMode] = useState<"auto" | "ultra" | "standard">("auto");
+  const resolutionModeRef = useRef<"auto" | "ultra" | "standard">("auto");
+  resolutionModeRef.current = resolutionMode;
+  const updateResolutionRef = useRef<((mode?: "auto" | "ultra" | "standard") => void) | null>(null);
+  const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -191,6 +199,14 @@ export default function Dashboard() {
           console.warn("Exit fullscreen failed:", err);
         });
       }
+    }
+  };
+
+  const handleCycleResolution = () => {
+    const next = resolutionMode === "auto" ? "ultra" : resolutionMode === "ultra" ? "standard" : "auto";
+    setResolutionMode(next);
+    if (updateResolutionRef.current) {
+      updateResolutionRef.current(next);
     }
   };
 
@@ -291,11 +307,11 @@ export default function Dashboard() {
       };
     });
 
-    // Real Earth Continents & Terrain Texture (earthTex2)
+    // Real Earth Continents & Terrain Texture (2048x1024 High-Resolution)
     let MD: Uint8ClampedArray | null = null;
     function earthTex2(): THREE.CanvasTexture {
-      const W = 1024,
-        H = 512;
+      const W = 2048,
+        H = 1024;
       const c = document.createElement("canvas");
       c.width = W;
       c.height = H;
@@ -334,7 +350,7 @@ export default function Dashboard() {
         mx.arc(
           ((g.lon + 180) / 360) * W,
           ((90 - g.lat) / 180) * H,
-          4,
+          6,
           0,
           7
         );
@@ -390,7 +406,11 @@ export default function Dashboard() {
         }
       }
       x.putImageData(im, 0, 0);
-      return new THREE.CanvasTexture(c);
+      const tex = new THREE.CanvasTexture(c);
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
     }
 
     // Procedural Cloud Texture
@@ -417,7 +437,11 @@ export default function Dashboard() {
         }
       }
       x.putImageData(im, 0, 0);
-      return new THREE.CanvasTexture(c);
+      const tex = new THREE.CanvasTexture(c);
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
     }
 
     // Radial Halo Glow Texture
@@ -435,21 +459,32 @@ export default function Dashboard() {
       return new THREE.CanvasTexture(c);
     }
 
-    // Three.js Renderer Setup
+    // Three.js High-Performance WebGL Renderer Setup
     let R: THREE.WebGLRenderer;
     try {
-      R = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      R = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance",
+      });
     } catch {
       return;
     }
-    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    R.setSize(stageEl.clientWidth, stageEl.clientHeight);
+    const maxAniso = R.capabilities.getMaxAnisotropy ? R.capabilities.getMaxAnisotropy() : 4;
+    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
+    R.setSize(window.innerWidth, window.innerHeight, true);
+    R.domElement.style.width = "100%";
+    R.domElement.style.height = "100%";
+    R.domElement.style.position = "absolute";
+    R.domElement.style.top = "0";
+    R.domElement.style.left = "0";
+    R.domElement.style.display = "block";
     stageEl.replaceChildren(R.domElement);
 
     const scene = new THREE.Scene();
     const cam = new THREE.PerspectiveCamera(
       40,
-      stageEl.clientWidth / stageEl.clientHeight,
+      window.innerWidth / window.innerHeight,
       0.01,
       300
     );
@@ -460,42 +495,46 @@ export default function Dashboard() {
     sun.position.set(5, 1.5, 3);
     scene.add(sun);
 
-    // Earth Sphere with Real Continents
+    // Earth Sphere with Real Continents (High Poly 128x96)
     const earth = new THREE.Group();
     scene.add(earth);
+    const earthTexture = earthTex2();
+    earthTexture.anisotropy = maxAniso;
     const earthMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 96, 64),
+      new THREE.SphereGeometry(1, 128, 96),
       new THREE.MeshPhongMaterial({
-        map: earthTex2(),
-        shininess: 10,
+        map: earthTexture,
+        shininess: 12,
         specular: 0x101a24,
       })
     );
     earth.add(earthMesh);
 
-    // Night Lights Layer for Major Cities on Earth's Dark Side
+    // Night Lights Layer for Major Cities on Earth's Dark Side (2048x1024)
+    const NW = 2048,
+      NH = 1024;
     const nightCanvas = document.createElement("canvas");
-    nightCanvas.width = 1024;
-    nightCanvas.height = 512;
+    nightCanvas.width = NW;
+    nightCanvas.height = NH;
     const nightCtx = nightCanvas.getContext("2d");
     if (nightCtx) {
       nightCtx.fillStyle = "#000";
-      nightCtx.fillRect(0, 0, 1024, 512);
+      nightCtx.fillRect(0, 0, NW, NH);
 
       const px = (lo: number, la: number): [number, number] => [
-        ((lo + 180) / 360) * 1024,
-        ((90 - la) / 180) * 512,
+        ((lo + 180) / 360) * NW,
+        ((90 - la) / 180) * NH,
       ];
 
       for (let i = 0; i < CITY.length; i += 2) {
         const q = px(CITY[i], CITY[i + 1]);
-        const gr = nightCtx.createRadialGradient(q[0], q[1], 0, q[0], q[1], 7);
-        gr.addColorStop(0, "rgba(255,214,150,.75)");
+        const gr = nightCtx.createRadialGradient(q[0], q[1], 0, q[0], q[1], 10);
+        gr.addColorStop(0, "rgba(255,214,150,.85)");
         gr.addColorStop(1, "rgba(255,214,150,0)");
         nightCtx.fillStyle = gr;
-        nightCtx.fillRect(q[0] - 7, q[1] - 7, 14, 14);
+        nightCtx.fillRect(q[0] - 10, q[1] - 10, 20, 20);
 
-        for (let n = 0; n < 26; n++) {
+        for (let n = 0; n < 30; n++) {
           const lo =
             CITY[i] +
             (Math.random() + Math.random() + Math.random() - 1.5) * 3.6;
@@ -507,23 +546,27 @@ export default function Dashboard() {
           const Y = Math.floor(p[1]);
           if (
             X < 0 ||
-            X >= 1024 ||
+            X >= NW ||
             Y < 0 ||
-            Y >= 512 ||
-            (MD && MD[(Y * 1024 + X) * 4] < 200)
+            Y >= NH ||
+            (MD && MD[(Y * NW + X) * 4] < 200)
           ) {
             continue;
           }
           nightCtx.fillStyle = `rgba(255,222,160,${0.45 + Math.random() * 0.5})`;
-          nightCtx.fillRect(p[0], p[1], 1.6, 1.6);
+          nightCtx.fillRect(p[0], p[1], 2, 2);
         }
       }
 
       const lt = new THREE.CanvasTexture(nightCanvas);
+      lt.generateMipmaps = true;
+      lt.anisotropy = maxAniso;
+      lt.minFilter = THREE.LinearMipmapLinearFilter;
+      lt.magFilter = THREE.LinearFilter;
       const sd = new THREE.Vector3(5, 1.5, 3).normalize();
       earth.add(
         new THREE.Mesh(
-          new THREE.SphereGeometry(1.001, 96, 64),
+          new THREE.SphereGeometry(1.001, 128, 96),
           new THREE.ShaderMaterial({
             uniforms: { m: { value: lt }, s: { value: sd } },
             vertexShader: `varying vec2 vU;
@@ -549,20 +592,22 @@ export default function Dashboard() {
       );
     }
 
-    // Cloud Sphere
+    // Cloud Sphere (High Poly 128x96)
+    const cloudTexture = cloudTex();
+    cloudTexture.anisotropy = maxAniso;
     const clouds = new THREE.Mesh(
-      new THREE.SphereGeometry(1.012, 64, 48),
+      new THREE.SphereGeometry(1.012, 128, 96),
       new THREE.MeshPhongMaterial({
-        map: cloudTex(),
+        map: cloudTexture,
         transparent: true,
         depthWrite: false,
       })
     );
     scene.add(clouds);
 
-    // Atmosphere Glow Shader
+    // Atmosphere Glow Shader (High Poly 96x64)
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1.14, 64, 48),
+      new THREE.SphereGeometry(1.14, 96, 64),
       new THREE.ShaderMaterial({
         vertexShader: `varying vec3 vN;
         void main(){
@@ -826,8 +871,8 @@ export default function Dashboard() {
     // Camera variables
     let th = 0.9,
       ph = 1.25,
-      dist = 5.2,
-      dT = 5.2,
+      dist = 5.5,
+      dT = 5.5,
       fly = 0,
       tth = 0,
       tph = 0;
@@ -878,7 +923,7 @@ export default function Dashboard() {
         dT = o.kind === "sat" ? (o.rd > 2 ? 3.2 : 1.15) : 1.7;
         setTab(o.kind === "sat" ? 0 : 1);
       } else {
-        dT = 5.2;
+        dT = 5.5;
         fly = 0;
       }
       setPassesList(calcPasses(o));
@@ -996,16 +1041,50 @@ export default function Dashboard() {
     stageEl.addEventListener("pointercancel", onPointerUp);
     stageEl.addEventListener("wheel", onWheel, { passive: false });
 
-    // Handle Window Resize
-    function handleResize() {
-      if (!stageEl) return;
-      const w = stageEl.clientWidth;
-      const h = stageEl.clientHeight;
-      R.setSize(w, h, false);
+    // Dynamic Resolution & Fullscreen Aspect Adjustment
+    const applyResolution = (modeArg?: "auto" | "ultra" | "standard") => {
+      if (!R || !stageEl) return;
+      const mode = modeArg || resolutionModeRef.current;
+      const w = window.innerWidth || stageEl.clientWidth;
+      const h = window.innerHeight || stageEl.clientHeight;
+      const nativeDpr = window.devicePixelRatio || 1;
+
+      let targetDpr = nativeDpr;
+      if (mode === "ultra") {
+        targetDpr = Math.max(2.0, Math.min(nativeDpr * 1.5, 3.0));
+      } else if (mode === "standard") {
+        targetDpr = 1.0;
+      } else {
+        targetDpr = Math.min(nativeDpr, 2.5); // Native Auto DPI
+      }
+
+      R.setPixelRatio(targetDpr);
+      R.setSize(w, h, true); // true synchronizes canvas CSS style with buffer resolution
       cam.aspect = w / h;
+
+      // Responsive FOV: ensure the Earth is a perfect circle and framed with breathing room
+      const aspect = w / h;
+      cam.fov = aspect < 1.6 ? 40 + (1.6 - aspect) * 10 : 40;
       cam.updateProjectionMatrix();
+    };
+
+    updateResolutionRef.current = applyResolution;
+    applyResolution();
+
+    function handleResize() {
+      applyResolution();
     }
     window.addEventListener("resize", handleResize);
+
+    // Chrome Fullscreen transitions often complete asynchronously over 100-300ms
+    const onFullscreenTransition = () => {
+      applyResolution();
+      setTimeout(applyResolution, 60);
+      setTimeout(applyResolution, 180);
+      setTimeout(applyResolution, 350);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenTransition);
+    document.addEventListener("webkitfullscreenchange", onFullscreenTransition);
 
     // Animation Loop
     let last = performance.now();
@@ -1191,6 +1270,8 @@ export default function Dashboard() {
     return () => {
       cancelAnimationFrame(reqId);
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("fullscreenchange", onFullscreenTransition);
+      document.removeEventListener("webkitfullscreenchange", onFullscreenTransition);
       stageEl.removeEventListener("contextmenu", onContextMenu);
       stageEl.removeEventListener("pointerdown", onPointerDown);
       stageEl.removeEventListener("pointermove", onPointerMove);
@@ -1335,6 +1416,22 @@ export default function Dashboard() {
 
         <span className="flex-1" />
 
+        {/* Resolution Quality Selector */}
+        <button
+          onClick={handleCycleResolution}
+          className="chip mono text-xs py-1 px-3 pointer-events-auto flex items-center gap-1.5 hover:border-[#7fb2d4] cursor-pointer text-[#8fa6ba] hover:text-[#e8f1f8] transition-all"
+          title="Click to cycle Fullscreen 3D Graphics Resolution (Auto Native / Ultra 4K / Standard)"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-[#f2c14e]" />
+          <span>
+            {resolutionMode === "ultra"
+              ? "Res: Ultra 4K (2.5×)"
+              : resolutionMode === "standard"
+              ? "Res: Standard (1×)"
+              : "Res: Auto Native"}
+          </span>
+        </button>
+
         {/* Fullscreen Toggle Button */}
         <button
           onClick={toggleFullscreen}
@@ -1355,18 +1452,44 @@ export default function Dashboard() {
         </span>
       </nav>
 
-      {/* Intro Hero Section */}
-      <div className="intro fixed left-4 sm:left-8 top-20 z-20 max-w-[420px] pointer-events-none">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-none tracking-tight text-white drop-shadow-md">
-          See every pass before it happens.
-        </h1>
-        <p className="mt-3 text-sm sm:text-base text-[#8fa6ba] leading-relaxed max-w-[38ch]">
-          Track the whole fleet in 3D. Click any satellite or ground station to inspect it and see its next contact.
-        </p>
-        <div className="hint mono text-xs mt-3.5 text-[#7fb2d4]">
-          Drag to orbit · Scroll to zoom · Right-drag to pan
+      {/* Intro Hero Section with Hide/Show Toggle */}
+      {showIntro && (
+        <div className="intro fixed left-4 sm:left-8 top-20 z-20 max-w-[340px] sm:max-w-[380px] pointer-events-auto bg-[rgba(6,13,24,0.72)] backdrop-blur-md p-4 rounded-xl border border-[rgba(127,178,212,0.2)] shadow-xl transition-all">
+          <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-[rgba(127,178,212,0.15)]">
+            <span className="text-[10px] font-mono tracking-widest text-[#7fb2d4] uppercase font-semibold">
+              Mission Visualizer
+            </span>
+            <button
+              onClick={() => setShowIntro(false)}
+              className="text-[#8fa6ba] hover:text-[#e8f1f8] p-0.5 rounded cursor-pointer transition-colors"
+              title="Hide Guide (View full 3D Earth)"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-md">
+            See every pass before it happens.
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm text-[#8fa6ba] leading-relaxed">
+            Track the whole fleet in 3D. Click any satellite or ground station to inspect it and see its next contact.
+          </p>
+          <div className="hint mono text-[11px] mt-2.5 text-[#7fb2d4] flex items-center gap-1.5">
+            <span>Drag to orbit · Scroll to zoom · Right-drag to pan</span>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Restore Guide Button */}
+      {!showIntro && (
+        <button
+          onClick={() => setShowIntro(true)}
+          className="fixed left-4 sm:left-8 top-20 z-20 chip mono text-xs py-1.5 px-3 pointer-events-auto flex items-center gap-1.5 bg-[rgba(6,13,24,0.8)] backdrop-blur-md border border-[rgba(127,178,212,0.24)] text-[#8fa6ba] hover:text-[#e8f1f8] cursor-pointer shadow-lg"
+          title="Show Mission Guide"
+        >
+          <Eye className="w-3.5 h-3.5 text-[#7fb2d4]" />
+          <span>Show Guide</span>
+        </button>
+      )}
 
       {/* Bottom Controls Dock */}
       <div className="dock fixed left-4 sm:left-8 bottom-4 z-20 flex flex-col gap-2">
