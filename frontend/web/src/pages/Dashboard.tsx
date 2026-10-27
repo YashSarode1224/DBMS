@@ -7,7 +7,9 @@ import {
   Radio,
   Calendar,
   Bot,
-  Database
+  Database,
+  Maximize,
+  Minimize
 } from "lucide-react";
 
 interface SatData {
@@ -166,6 +168,31 @@ export default function Dashboard() {
     cld: true,
     lbl: true,
   });
+
+  // Chrome / HTML5 Fullscreen Support
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn("Fullscreen request failed:", err);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Exit fullscreen failed:", err);
+        });
+      }
+    }
+  };
 
   // Keep references for 3D simulation to interact smoothly without re-rendering
   const objsMapRef = useRef<Map<string, MissionObject>>(new Map());
@@ -1307,6 +1334,20 @@ export default function Dashboard() {
         </div>
 
         <span className="flex-1" />
+
+        {/* Fullscreen Toggle Button */}
+        <button
+          onClick={toggleFullscreen}
+          className="chip mono text-xs py-1 px-3 pointer-events-auto flex items-center gap-1.5 hover:border-[#7fb2d4] cursor-pointer text-[#8fa6ba] hover:text-[#e8f1f8] transition-all"
+          title={isFullscreen ? "Exit Fullscreen (Esc or F11)" : "Enter Fullscreen in Chrome (F11)"}
+        >
+          {isFullscreen ? (
+            <Minimize className="w-3.5 h-3.5 text-[#f2c14e]" />
+          ) : (
+            <Maximize className="w-3.5 h-3.5 text-[#7fb2d4]" />
+          )}
+          <span className="hidden sm:inline">{isFullscreen ? "Exit Fullscreen" : "Full Screen"}</span>
+        </button>
 
         {/* Live Mission Clock */}
         <span className="chip mono text-xs py-1 px-3 pointer-events-auto">

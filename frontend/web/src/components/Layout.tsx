@@ -15,7 +15,9 @@ import {
   HardDrive,
   Sun,
   Moon,
-  Sparkles
+  Sparkles,
+  Maximize,
+  Minimize
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
@@ -47,6 +49,31 @@ export default function Layout({ children }: LayoutProps) {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Chrome / HTML5 Fullscreen Support
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn("Fullscreen request failed:", err);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Exit fullscreen failed:", err);
+        });
+      }
+    }
+  };
 
   const userToken = localStorage.getItem("token");
   const userRole = localStorage.getItem("user_role") || "admin";
@@ -124,6 +151,23 @@ export default function Layout({ children }: LayoutProps) {
             ) : (
               <Sun className="w-3.5 h-3.5 text-[#f2c14e]" />
             )}
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className="chip mono text-xs py-1 px-2.5 hover:border-[#7fb2d4] transition-all cursor-pointer text-[#8fa6ba] hover:text-[#e8f1f8] flex items-center gap-1.5"
+            title={isFullscreen ? "Exit Fullscreen (Esc or F11)" : "Enter Fullscreen in Chrome (F11)"}
+            aria-label="Toggle Fullscreen"
+          >
+            {isFullscreen ? (
+              <Minimize className="w-3.5 h-3.5 text-[#f2c14e]" />
+            ) : (
+              <Maximize className="w-3.5 h-3.5 text-[#7fb2d4]" />
+            )}
+            <span className="hidden sm:inline text-[11px]">
+              {isFullscreen ? "Exit" : "Full Screen"}
+            </span>
           </button>
 
           {/* User Profile / Auth */}
