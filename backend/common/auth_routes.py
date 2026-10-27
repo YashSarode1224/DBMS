@@ -15,8 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .auth import (authenticate_user, create_access_token,
-                   get_current_active_user)
+from .auth import (authenticate_user, create_access_token, create_refresh_token,
+                   get_current_active_user, Role)
 from .database import get_db
 from .schemas import TokenResponse, User
 
@@ -26,6 +26,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 @router.post("/login", response_model=TokenResponse)
+@router.post("/auth/login", response_model=TokenResponse)
 async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
@@ -56,10 +57,20 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    user_role = Role(user.role.lower()) if getattr(user, "role", None) else Role.ADMIN
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        user_id=user.id,
+        email=user.email,
+        role=user_role,
+        expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(user_id=user.id)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    }
 
 
 @router.get("/users/me/", response_model=User)

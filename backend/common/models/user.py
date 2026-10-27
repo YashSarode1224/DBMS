@@ -25,5 +25,9 @@ class UserORM(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime(timezone=True), nullable=True)
     
+    @property
+    def username(self):
+        return self.email
+
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"

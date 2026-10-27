@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # Authentication
     auth_disabled: bool = False  # Set True for local dev without auth
     jwt_secret_key: str = "change-me-in-production-use-a-real-secret-key"
+    jwt_refresh_secret_key: str = "change-me-in-production-use-a-real-refresh-key"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24  # 24 hours
     

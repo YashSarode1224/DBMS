@@ -56,21 +56,21 @@ hash_password = get_password_hash
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[UserORM]:
     """
-    Find a user by email and verify their password.
+    Find a user by email or username and verify their password.
 
     Args:
         db: The SQLAlchemy async session.
-        email: The user's email.
+        email: The user's email or username.
         password: The user's plain-text password.
 
     Returns:
         The User ORM object if authentication is successful, otherwise None.
     """
-    result = await db.execute(select(UserORM).filter(UserORM.email == email))
+    result = await db.execute(select(UserORM).filter((UserORM.email == email) | (UserORM.username == email)))
     user = result.scalars().first()
 
     if not user:
-        logger.debug(f"Authentication failed: User with email '{email}' not found.")
+        logger.debug(f"Authentication failed: User with identifier '{email}' not found.")
         return None
     if not verify_password(password, user.hashed_password):
         logger.debug(f"Authentication failed: Invalid password for user '{email}'.")
@@ -78,16 +78,29 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> Opti
 
     return user
 
-def create_access_token(user_id: int, email: str, role: Role, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    user_id: Optional[int] = None,
+    email: Optional[str] = None,
+    role: Optional[Role] = None,
+    expires_delta: Optional[timedelta] = None,
+    data: Optional[dict] = None
+) -> str:
     """Create a new JWT access token."""
     settings = get_settings()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
-    to_encode = {
-        "sub": str(user_id),
-        "email": email,
-        "role": role.value,
-        "exp": expire
-    }
+    if data:
+        to_encode = data.copy()
+        to_encode.setdefault("exp", expire)
+        to_encode.setdefault("sub", str(to_encode.get("sub", "1")))
+        to_encode.setdefault("email", to_encode.get("email", "admin@demo.constellation-hub.local"))
+        to_encode.setdefault("role", to_encode.get("role", "admin"))
+    else:
+        to_encode = {
+            "sub": str(user_id or 1),
+            "email": email or "admin@demo.constellation-hub.local",
+            "role": role.value if role else "admin",
+            "exp": expire
+        }
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 def create_refresh_token(user_id: int, expires_delta: Optional[timedelta] = None) -> str:
@@ -95,7 +108,8 @@ def create_refresh_token(user_id: int, expires_delta: Optional[timedelta] = None
     settings = get_settings()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=7))
     to_encode = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(to_encode, settings.jwt_refresh_secret_key, algorithm=settings.jwt_algorithm)
+    secret = getattr(settings, "jwt_refresh_secret_key", settings.jwt_secret_key)
+    return jwt.encode(to_encode, secret, algorithm=settings.jwt_algorithm)
 
 def decode_token(token: str) -> TokenData:
     """Decode and validate a JWT access token."""

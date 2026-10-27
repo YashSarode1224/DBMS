@@ -50,7 +50,7 @@ export const api = {
     aiAgentsApi.post("/ai/ops-copilot/analyze", data),
 
   // Auth & Demo
-  login: (data: FormData) => coreOrbitsApi.post("/auth/login", data),
+  login: (data: FormData) => coreOrbitsApi.post("/login", data),
   seedDemo: () => coreOrbitsApi.post("/demo/seed"),
 };
 
